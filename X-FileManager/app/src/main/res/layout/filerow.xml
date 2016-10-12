@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="40dp" >
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:text="delete"
+        android:layout_gravity="center_vertical|right"
+        android:id="@+id/deleteButton"
+        android:background="@drawable/delbuttom"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
+
+
+        <Button
+            android:id="@+id/content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingLeft="10dp"
+            android:text="LOL"
+            android:textSize="25sp"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:background="@drawable/fileitem"
+            android:gravity="center_vertical|left"
+            android:layout_alignBottom="@+id/deleteButton"
+            android:layout_toLeftOf="@+id/deleteButton"
+            android:layout_toStartOf="@+id/deleteButton">
+        </Button>
+
+
+</RelativeLayout>
