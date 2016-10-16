@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -29,18 +30,26 @@ public class MainActivity extends Activity implements View.OnClickListener {
     ListView filesView;
     File currentFile;
     TextView head;
-    Button paste;
+    Button paste, addButton;
     View mainView;
     AlertDialog waitingCopy;
-    private Thread copyThread;
     private boolean stopped;
     private File copyingFile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            requestPermissions(new String[]{
+                    "android.permission.READ_EXTERNAL_STORAGE",
+                    "android.permission.WRITE_EXTERNAL_STORAGE"
+            }, 102);
+        }
         setContentView(R.layout.activity_main);
         mainView = findViewById(R.id.mainView);
+        addButton = (Button) findViewById(R.id.newfile);
+        addButton.setOnClickListener(this);
         paste = (Button) findViewById(R.id.paste);
         paste.setOnClickListener(this);
         filesView = (ListView) findViewById(R.id.childfiles);
@@ -104,8 +113,59 @@ public class MainActivity extends Activity implements View.OnClickListener {
             File from = new File(Helper.bufferPath);
             if(!from.exists()) return;
             startCopy(from);
+        }else if (view.getId() == addButton.getId()){
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+            builder.setPositiveButton("File", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    openCreationDialog(false);
+                }
+            });
+            builder.setNegativeButton("Folder", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    openCreationDialog(true);
+                }
+            });
+            builder.create().show();
         }
     }
+
+    private void openCreationDialog(final boolean isDir) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        final EditText text = new EditText(this);
+        builder.setView(text);
+        builder.setPositiveButton("Make", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                create(text.getText().toString(), isDir);
+                openDirectory();
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.cancel();
+            }
+        });
+        builder.create().show();
+    }
+
+    private void create(String fileName, boolean isDir) {
+        File file = new File(currentFile.getAbsolutePath() + "/" + fileName);
+        if(isDir){
+            file.mkdir();
+            return;
+        }
+        try {
+            file.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
 
     private void startCopy(final File from) {
         final MyHandler handler = new MyHandler(this);
@@ -122,17 +182,16 @@ public class MainActivity extends Activity implements View.OnClickListener {
         waitingCopy.show();
         stopped = false;
         copyingFile = null;
-        copyThread = new Thread() {
+        new Thread() {
             @Override
             public void run() {
-                if(copy(from, currentFile)){
+                if (copy(from, currentFile)) {
                     handler.sendEmptyMessage(MyHandler.COPY_FINISHED);
-                }else {
+                } else {
                     handler.sendEmptyMessage(MyHandler.COPY_FAILED);
                 }
             }
-        };
-        copyThread.start();
+        }.start();
     }
 
     public boolean copy(File from, File dir) {
@@ -281,7 +340,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
     }
 
     public void copyFinished() {
-//        TODO: <code>this</code>
         Toast.makeText(this,
                 "copy finished",
                 Toast.LENGTH_LONG).show();

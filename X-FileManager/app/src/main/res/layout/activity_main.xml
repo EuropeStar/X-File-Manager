@@ -27,17 +27,30 @@
             android:layout_alignParentLeft="true"
             android:layout_alignParentStart="true"
             android:paddingStart="17dp"
-            android:textColor="@color/abc_primary_text_disable_only_material_dark" />
+            android:textColor="@color/abc_primary_text_disable_only_material_dark"
+            android:paddingLeft="17dp" />
 
         <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
             android:id="@+id/paste"
             android:layout_centerVertical="true"
             android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true"
             android:background="@drawable/abc_ic_menu_copy_mtrl_am_alpha"
             android:layout_marginRight="20dp" />
+
+        <Button
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+            android:id="@+id/newfile"
+
+            android:background="@android:drawable/ic_input_add"
+            android:layout_alignTop="@+id/paste"
+            android:layout_toLeftOf="@+id/paste"
+            android:layout_marginRight="20dp"
+            />
     </RelativeLayout>
 
     <ListView
