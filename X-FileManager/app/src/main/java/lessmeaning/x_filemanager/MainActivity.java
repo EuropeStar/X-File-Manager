@@ -11,6 +11,7 @@ import android.os.Environment;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -33,7 +34,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
     Button paste, addButton;
     View mainView;
     AlertDialog waitingCopy;
-    private boolean stopped;
+    private volatile boolean stopped;
     private File copyingFile;
 
     @Override
@@ -69,18 +70,22 @@ public class MainActivity extends Activity implements View.OnClickListener {
         new MyArrayAdapter(this,values,filesView);
     }
 
-    public void openFile(File file){
+    public boolean openFile(File file){
         if(!file.isDirectory()){
             openFileInOtherApp(file);
-            return;
+            return true;
+        }
+        if(!file.exists()){
+            return false;
         }
         if(file.listFiles() == null){
             Toast.makeText(this, "Empty folder", Toast.LENGTH_SHORT).show();
-            return;
+            return true;
         }
         currentFile = file;
         head.setText(currentFile.getName());
         openDirectory();
+        return true;
     }
 
     private void openFileInOtherApp(File file) {
@@ -91,45 +96,10 @@ public class MainActivity extends Activity implements View.OnClickListener {
         startActivity(intent);
     }
 
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if(keyCode == KeyEvent.KEYCODE_BACK){
-            openUpperDir();
-            return true;
-        }
-        return super.onKeyDown(keyCode, event);
-    }
-
-    private void openUpperDir(){
+    private boolean openUpperDir(){
         File parent = currentFile.getParentFile();
-        if(parent == null) return;
-        openFile(parent);
-    }
-
-    @Override
-    public void onClick(View view) {
-        if(view.getId() == paste.getId()){
-            if(Helper.bufferPath == null) return;
-            File from = new File(Helper.bufferPath);
-            if(!from.exists()) return;
-            startCopy(from);
-        }else if (view.getId() == addButton.getId()){
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-
-            builder.setPositiveButton("File", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialogInterface, int i) {
-                    openCreationDialog(false);
-                }
-            });
-            builder.setNegativeButton("Folder", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialogInterface, int i) {
-                    openCreationDialog(true);
-                }
-            });
-            builder.create().show();
-        }
+        if(parent == null) return false;
+        return openFile(parent);
     }
 
     private void openCreationDialog(final boolean isDir) {
@@ -164,90 +134,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
             e.printStackTrace();
         }
 
-    }
-
-
-    private void startCopy(final File from) {
-        final MyHandler handler = new MyHandler(this);
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        ProgressBar progress = new ProgressBar(this);
-        builder.setView(progress);
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                stopped = true;
-            }
-        });
-        waitingCopy = builder.show();
-        waitingCopy.show();
-        stopped = false;
-        copyingFile = null;
-        new Thread() {
-            @Override
-            public void run() {
-                if (copy(from, currentFile)) {
-                    handler.sendEmptyMessage(MyHandler.COPY_FINISHED);
-                } else {
-                    handler.sendEmptyMessage(MyHandler.COPY_FAILED);
-                }
-            }
-        }.start();
-    }
-
-    public boolean copy(File from, File dir) {
-        if(stopped) return false;
-
-        if(from.isDirectory()){
-            dir = new File(dir.getAbsolutePath() + "/" +
-                            from.getName());
-            while(dir.exists()){
-                dir = new File(dir.getParentFile().getAbsolutePath() + "/" +
-                                "copy_" +
-                                dir.getName());
-
-            }
-            if(copyingFile == null){
-                copyingFile = dir;
-            }
-            dir.mkdirs();
-            boolean succes = true;
-            for(File file : from.listFiles()){
-                if(!copy(file, dir))
-                    succes = false;
-            }
-            return succes;
-        }else {
-            return copyOneFile(from, dir);
-        }
-    }
-
-    private boolean copyOneFile(File from, File dir) {
-        File to = new File(dir.getAbsolutePath() +
-                "/" +
-                from.getName());
-        while(to.exists()){
-            to = new File(to.getParentFile().getAbsolutePath() + "/" +
-                    "copy_" +
-                            to.getName());
-        }
-        if(copyingFile == null){
-            copyingFile = to;
-        }
-        try {
-            FileInputStream  input = new FileInputStream(from);
-            FileOutputStream output = new FileOutputStream(to);
-            byte bytes[] = new byte[1024];
-            int num;
-            while((num = input.read(bytes)) != -1){
-                output.write(bytes, 0, num);
-            }
-            input.close();
-            output.close();
-            return true;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return false;
     }
 
     public void showPopMenu(final FileWrapper fileWrapper) {
@@ -339,17 +225,144 @@ public class MainActivity extends Activity implements View.OnClickListener {
         dialog.show();
     }
 
+    private void startCopy(final File from) {
+        final MyHandler handler = new MyHandler(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        ProgressBar progress = new ProgressBar(this);
+        builder.setView(progress);
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.cancel();
+            }
+        });
+        builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialogInterface) {
+                stopped = true;
+            }
+        });
+        waitingCopy = builder.create();
+        waitingCopy.show();
+        stopped = false;
+        copyingFile = null;
+        new Thread() {
+            @Override
+            public void run() {
+                if (copy(from, currentFile)) {
+                    handler.sendEmptyMessage(MyHandler.COPY_FINISHED);
+                } else {
+                    handler.sendEmptyMessage(MyHandler.COPY_FAILED);
+                }
+            }
+        }.start();
+    }
+
+    public boolean copy(File from, File dir) {
+        if(stopped) return false;
+
+        if(from.isDirectory()){
+            dir = new File(dir.getAbsolutePath() + "/" +
+                    from.getName());
+            while(dir.exists()){
+                dir = new File(dir.getParentFile().getAbsolutePath() + "/" +
+                        "copy_" +
+                        dir.getName());
+
+            }
+            if(copyingFile == null){
+                copyingFile = dir;
+            }
+            dir.mkdirs();
+            boolean succes = true;
+            for(File file : from.listFiles()){
+                if(!copy(file, dir))
+                    succes = false;
+            }
+            return succes;
+        }else {
+            return copyOneFile(from, dir);
+        }
+    }
+
+    private boolean copyOneFile(File from, File dir) {
+        File to = new File(dir.getAbsolutePath() +
+                "/" +
+                from.getName());
+        while(to.exists()){
+            to = new File(to.getParentFile().getAbsolutePath() + "/" +
+                    "copy_" +
+                    to.getName());
+        }
+        if(copyingFile == null){
+            copyingFile = to;
+        }
+        try {
+            FileInputStream  input = new FileInputStream(from);
+            FileOutputStream output = new FileOutputStream(to);
+            byte bytes[] = new byte[1024];
+            int num;
+            while((num = input.read(bytes)) != -1){
+                output.write(bytes, 0, num);
+            }
+            input.close();
+            output.close();
+            return true;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public void copyFinished() {
         Toast.makeText(this,
-                "copy finished",
-                Toast.LENGTH_LONG).show();
+                "copy successful",
+                Toast.LENGTH_SHORT).show();
         waitingCopy.cancel();
         openDirectory();
     }
 
     public void copyFailed() {
+        Toast.makeText(this,
+                "copy failed",
+                Toast.LENGTH_SHORT).show();
         if(copyingFile != null || copyingFile.exists()){
             Helper.deleteFile(copyingFile);
         }
+    }
+
+    @Override
+    public void onClick(View view) {
+        if(view.getId() == paste.getId()){
+            if(Helper.bufferPath == null) return;
+            File from = new File(Helper.bufferPath);
+            if(!from.exists()) return;
+            startCopy(from);
+        }else if (view.getId() == addButton.getId()){
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+            builder.setPositiveButton("File", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    openCreationDialog(false);
+                }
+            });
+            builder.setNegativeButton("Folder", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    openCreationDialog(true);
+                }
+            });
+            builder.create().show();
+        }
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if(keyCode == KeyEvent.KEYCODE_BACK){
+            if(openUpperDir())
+                return true;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 }
