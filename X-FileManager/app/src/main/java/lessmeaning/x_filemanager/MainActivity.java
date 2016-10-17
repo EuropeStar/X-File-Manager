@@ -8,8 +8,12 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.design.widget.NavigationView;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
@@ -26,7 +30,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-public class MainActivity extends Activity implements View.OnClickListener {
+public class MainActivity extends Activity implements View.OnClickListener, NavigationView.OnNavigationItemSelectedListener {
 
     ListView filesView;
     File currentFile;
@@ -36,6 +40,12 @@ public class MainActivity extends Activity implements View.OnClickListener {
     AlertDialog waitingCopy;
     private volatile boolean stopped;
     private File copyingFile;
+    /*
+    TODO: change design of drawer
+    TODO: search
+    TODO: icons
+    TODO: file with paths of encrypted files
+     */
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +58,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
             }, 102);
         }
         setContentView(R.layout.activity_main);
+        NavigationView view = (NavigationView) findViewById(R.id.nav_view);
+        view.setNavigationItemSelectedListener(this);
         mainView = findViewById(R.id.mainView);
         addButton = (Button) findViewById(R.id.newfile);
         addButton.setOnClickListener(this);
@@ -67,6 +79,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
         for (int i = 0; i < values.length; i++){
             values[i] = children[i].getAbsolutePath();
         }
+        head.setText(currentFile.getName());
         new MyArrayAdapter(this,values,filesView);
     }
 
@@ -83,7 +96,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
             return true;
         }
         currentFile = file;
-        head.setText(currentFile.getName());
         openDirectory();
         return true;
     }
@@ -190,8 +202,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
             @Override
             public void onDismiss(PopupMenu menu) {
-                Toast.makeText(getApplicationContext(), "onDismiss",
-                        Toast.LENGTH_SHORT).show();
+                fileWrapper.choose(false);
             }
         });
         popupMenu.show();
@@ -364,5 +375,29 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 return true;
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public boolean onNavigationItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        String msg = "";
+        if (id == R.id.home) {
+            currentFile = Environment.getExternalStorageDirectory();
+            openDirectory();
+            msg = "home";
+        } else if (id == R.id.search) {
+            msg = "search";
+        } else if (id == R.id.encrypted) {
+            msg = "encrypted";
+        }
+
+        Toast.makeText(this,
+                msg,
+                Toast.LENGTH_SHORT).show();
+
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
+        return true;
     }
 }

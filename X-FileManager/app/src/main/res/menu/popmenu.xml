@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <group android:id="@+id/file_options_menu" >
+        <item
+            android:id="@+id/open"
+            android:icon="@mipmap/ic_launcher"
+            android:title="Open"/>
+        <item
+            android:id="@+id/copy"
+            android:title="Copy"/>
+        <item
+            android:id="@+id/rename"
+            android:title="Rename"/>
+        <item
+            android:id="@+id/encrypt"
+            android:title="Encrypt"/>
+        <item
+            android:id="@+id/share"
+            android:title="Share"/>
+        <item
+            android:id="@+id/delete"
+            android:title="Delete"/>
+
+    </group>
+
+</menu>

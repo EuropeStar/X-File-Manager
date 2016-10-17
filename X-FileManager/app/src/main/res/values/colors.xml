@@ -9,4 +9,9 @@
     <color name="redflat">#c0392b</color>
     <color name="whiteflat">#ecf0f1</color>
     <color name="grayflat">#bdc3c7</color>
+    <color name="wetasphalt">#34495e</color>
+    <color name="midnightblue">#2c3e50</color>
+    <color name="nephrits">#27ae60</color>
+    <color name="backgroundcolor">@color/midnightblue</color>
+    <color name="belizehole">#2980b9</color>
 </resources>

@@ -8,6 +8,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import java.io.File;
 import java.util.HashMap;
@@ -28,12 +29,10 @@ public class MyArrayAdapter extends ArrayAdapter<String> {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         LayoutInflater inflater= (LayoutInflater) activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        RelativeLayout newView = (RelativeLayout) inflater.inflate(R.layout.filerow, parent,false);
-        Button content = (Button) newView.findViewById(R.id.content);
-        Button opt = (Button) newView.findViewById(R.id.opt);
-        FileWrapper fileWrapper = new FileWrapper(activity,new File(values[position]),opt,content);
+        TextView newView = (TextView) inflater.inflate(R.layout.filerow, parent,false);
+        FileWrapper fileWrapper = new FileWrapper(activity,new File(values[position]),newView);
         String path[] = values[position].split("/");
-        content.setText(path[path.length - 1]);
+        newView.setText(path[path.length - 1]);
         return newView;
     }
 

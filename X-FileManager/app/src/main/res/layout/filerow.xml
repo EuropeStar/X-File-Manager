@@ -1,35 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="40dp"
-    android:background="@drawable/fileitem">
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_gravity="center_vertical|right"
-        android:id="@+id/opt"
-        android:background="@drawable/abc_ic_menu_moreoverflow_mtrl_alpha"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
-
-
-        <Button
-            android:id="@+id/content"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:paddingLeft="10dp"
-            android:text="LOL"
-            android:textSize="25sp"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"
-            android:background="@drawable/fileitem"
-            android:gravity="center_vertical|left"
-            android:layout_alignBottom="@+id/opt"
-            android:layout_toLeftOf="@+id/opt"
-            android:layout_toStartOf="@+id/opt">
-        </Button>
-
-
-</RelativeLayout>
+    android:layout_height="wrap_content"
+    android:text="Some Text"
+    android:drawableLeft="@mipmap/folder_icon"
+    android:drawablePadding="@dimen/activity_horizontal_margin"
+    android:background="@drawable/fileitem"
+    android:textStyle="normal"
+    android:gravity="center_vertical" />

@@ -2,37 +2,34 @@ package lessmeaning.x_filemanager;
 
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
+import android.support.v4.view.GestureDetectorCompat;
+import android.view.GestureDetector;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 import java.io.File;
 
 /**
  * Created by Максим on 14.10.2016.
  */
-public class FileWrapper implements View.OnClickListener {
+public class FileWrapper implements View.OnClickListener, View.OnLongClickListener {
     private final File file;
     private final MainActivity activity;
+    private final TextView view;
 
-    public FileWrapper(MainActivity activity,File file, Button open, Button opt){
+    public FileWrapper(MainActivity activity, File file, TextView view){
         this.file = file;
         this.activity = activity;
-        open.setOnClickListener(this);
-        opt.setOnClickListener(this);
+        this.view = view;
+        view.setOnClickListener(this);
+        view.setOnLongClickListener(this);
     }
 
     @Override
     public void onClick(View view) {
-        switch (view.getId()){
-            case R.id.opt:
-                activity.showPopMenu(this);
-                return;
-            case R.id.content:
-                activity.openFile(file);
-                return;
-            default:
-                throw new RuntimeException("unknown button is clicked");
-        }
+        activity.openFile(file);
     }
 
     public File getFile() {
@@ -82,5 +79,22 @@ public class FileWrapper implements View.OnClickListener {
                             fileName,
                     Toast.LENGTH_SHORT).show();
         }
+    }
+
+    public void choose(boolean choice){
+        final int BACK = choice ? R.color.backgroundcolor : R.drawable.fileitem;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            view.setBackground(activity.getDrawable(BACK));
+        }else{
+            view.setBackgroundDrawable(activity.getResources().getDrawable(BACK));
+        }
+
+    }
+
+    @Override
+    public boolean onLongClick(View view) {
+        choose(true);
+        activity.showPopMenu(this);
+        return true;
     }
 }
