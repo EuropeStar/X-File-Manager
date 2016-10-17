@@ -11,6 +11,8 @@ import android.os.Environment;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -22,6 +24,7 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,16 +33,20 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-public class MainActivity extends Activity implements View.OnClickListener, NavigationView.OnNavigationItemSelectedListener {
+public class MainActivity extends Activity implements View.OnClickListener, NavigationView.OnNavigationItemSelectedListener, TextWatcher {
 
-    ListView filesView;
-    File currentFile;
-    TextView head;
-    Button paste, addButton;
-    View mainView;
-    AlertDialog waitingCopy;
+    private ListView filesView;
+    private File currentFile;
+    private TextView head;
+    private Button paste, addButton;
+    private AlertDialog waitingCopy;
     private volatile boolean stopped;
     private File copyingFile;
+    private boolean isSearching = false;
+    private RelativeLayout hat;
+    private EditText searchInput;
+    private MyHandler handler;
+    private FileSearcher searcher;
     /*
     TODO: change design of drawer
     TODO: search
@@ -60,7 +67,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
         setContentView(R.layout.activity_main);
         NavigationView view = (NavigationView) findViewById(R.id.nav_view);
         view.setNavigationItemSelectedListener(this);
-        mainView = findViewById(R.id.mainView);
+        hat = (RelativeLayout) findViewById(R.id.hat);
         addButton = (Button) findViewById(R.id.newfile);
         addButton.setOnClickListener(this);
         paste = (Button) findViewById(R.id.paste);
@@ -69,7 +76,32 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
         head = (TextView) findViewById(R.id.currentFile);
         currentFile = Environment.getExternalStorageDirectory();
         head.setText(currentFile.getName());
+        handler = new MyHandler(this);
+        searcher = new FileSearcher(handler);
         openDirectory();
+
+    }
+
+
+    private void startFileSearch(){
+        isSearching = true;
+        setVisibility(View.GONE);
+        searchInput = new EditText(this);
+        searchInput.addTextChangedListener(this);
+        hat.addView(searchInput);
+    }
+
+    private void setVisibility(final int VIS){
+        paste.setVisibility(VIS);
+        addButton.setVisibility(VIS);
+        head.setVisibility(VIS);
+    }
+
+    private void cancelFileSearching(){
+        isSearching = false;
+        searcher.cancelSearch();
+        searchInput.setVisibility(View.GONE);
+        setVisibility(View.VISIBLE);
     }
 
     private void openDirectory() {
@@ -80,9 +112,12 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
             values[i] = children[i].getAbsolutePath();
         }
         head.setText(currentFile.getName());
-        new MyArrayAdapter(this,values,filesView);
+        setFiles(values);
     }
 
+    public void setFiles(String values[]){
+        new MyArrayAdapter(this,values,filesView);
+    }
     public boolean openFile(File file){
         if(!file.isDirectory()){
             openFileInOtherApp(file);
@@ -237,7 +272,6 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
     }
 
     private void startCopy(final File from) {
-        final MyHandler handler = new MyHandler(this);
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         ProgressBar progress = new ProgressBar(this);
         builder.setView(progress);
@@ -371,8 +405,12 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if(keyCode == KeyEvent.KEYCODE_BACK){
-            if(openUpperDir())
+            if(isSearching) {
+                cancelFileSearching();
                 return true;
+            }else if(openUpperDir()) {
+                return true;
+            }
         }
         return super.onKeyDown(keyCode, event);
     }
@@ -388,6 +426,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
             msg = "home";
         } else if (id == R.id.search) {
             msg = "search";
+            startFileSearch();
         } else if (id == R.id.encrypted) {
             msg = "encrypted";
         }
@@ -399,5 +438,23 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    @Override
+    public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+    }
+
+    @Override
+    public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+        Log.d("searching", "onTextChanged: here");
+        if(isSearching){
+            searcher.startSearch(charSequence.toString(),currentFile);
+        }
+    }
+
+    @Override
+    public void afterTextChanged(Editable editable) {
+
     }
 }
