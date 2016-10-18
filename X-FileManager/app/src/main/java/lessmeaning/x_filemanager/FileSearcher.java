@@ -9,10 +9,7 @@ import java.util.ArrayList;
  * Created by Максим on 17.10.2016.
  */
 public class FileSearcher {
-    /*
-    TODO: search in folder names
-    TODO: search by lowerCase
-     */
+
     volatile boolean searching = false;
     final String TAG = "searching";
     MyHandler handler;
@@ -33,7 +30,8 @@ public class FileSearcher {
 //            }
         }
     }
-    public void startSearch(final String name, final File dir){
+    public void startSearch(String n, final File dir){
+        final String name = n.toLowerCase();
         if(dir == null || !dir.exists() || !dir.isDirectory())
             return;
 
@@ -56,22 +54,19 @@ public class FileSearcher {
         if(!searching) return null;
         ArrayList<String> res = new ArrayList<>();
         ArrayList<String> one ;
-        if(!file.exists()){
+        if(file == null || !file.exists()){
             return res;
+        }
+        if(file.getName().toLowerCase().contains(expression)){
+            res.add(file.getAbsolutePath());
         }
         if(file.isDirectory()){
             for(File child : file.listFiles()){
+                if(child == null) continue;
                 one = search(expression, child);
                 if(one == null)
                     return null;
                 res.addAll(one);
-            }
-        }else {
-            Log.d(TAG, "search: " + file.getName());
-            Log.d(TAG, "search: " + expression);
-            if(file.getName().contains(expression)){
-                Log.d(TAG, "search: find" + file.getName());
-                res.add(file.getAbsolutePath());
             }
         }
         return res;

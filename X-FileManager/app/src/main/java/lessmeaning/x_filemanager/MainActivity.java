@@ -14,11 +14,14 @@ import android.support.v4.widget.DrawerLayout;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -32,6 +35,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.zip.Inflater;
 
 public class MainActivity extends Activity implements View.OnClickListener, NavigationView.OnNavigationItemSelectedListener, TextWatcher {
 
@@ -49,9 +53,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
     private FileSearcher searcher;
     /*
     TODO: change design of drawer
-    TODO: search
     TODO: icons
-    TODO: file with paths of encrypted files
      */
 
     @Override
@@ -77,6 +79,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
         currentFile = Environment.getExternalStorageDirectory();
         head.setText(currentFile.getName());
         handler = new MyHandler(this);
+        searchInput = new EditText(this);
         searcher = new FileSearcher(handler);
         openDirectory();
 
@@ -86,7 +89,8 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
     private void startFileSearch(){
         isSearching = true;
         setVisibility(View.GONE);
-        searchInput = new EditText(this);
+        LayoutInflater inflater = getLayoutInflater();
+        searchInput = (EditText) inflater.inflate(R.layout.search_edittext, hat, false);
         searchInput.addTextChangedListener(this);
         hat.addView(searchInput);
     }
@@ -118,6 +122,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
     public void setFiles(String values[]){
         new MyArrayAdapter(this,values,filesView);
     }
+
     public boolean openFile(File file){
         if(!file.isDirectory()){
             openFileInOtherApp(file);
@@ -407,6 +412,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
         if(keyCode == KeyEvent.KEYCODE_BACK){
             if(isSearching) {
                 cancelFileSearching();
+                openDirectory();
                 return true;
             }else if(openUpperDir()) {
                 return true;
@@ -418,16 +424,17 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         int id = item.getItemId();
-
         String msg = "";
         if (id == R.id.home) {
             currentFile = Environment.getExternalStorageDirectory();
+            cancelFileSearching();
             openDirectory();
             msg = "home";
         } else if (id == R.id.search) {
             msg = "search";
             startFileSearch();
         } else if (id == R.id.encrypted) {
+            cancelFileSearching();
             msg = "encrypted";
         }
 
