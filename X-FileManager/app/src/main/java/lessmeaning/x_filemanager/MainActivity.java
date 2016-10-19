@@ -2,6 +2,7 @@ package lessmeaning.x_filemanager;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
@@ -14,14 +15,11 @@ import android.support.v4.widget.DrawerLayout;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.Menu;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -30,12 +28,10 @@ import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.zip.Inflater;
 
 public class MainActivity extends Activity implements View.OnClickListener, NavigationView.OnNavigationItemSelectedListener, TextWatcher {
 
@@ -102,13 +98,18 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
     }
 
     private void cancelFileSearching(){
+        Log.d("design", "cancelFileSearching: !!!");
         isSearching = false;
         searcher.cancelSearch();
+        removeKeyBoard();
         searchInput.setVisibility(View.GONE);
+        hat.removeView(searchInput);
         setVisibility(View.VISIBLE);
     }
 
     private void openDirectory() {
+        if(isSearching)
+            cancelFileSearching();
         Log.d("ListView",currentFile.toString());
         File children[] = currentFile.listFiles();
         String values[] = new String[children.length];
@@ -381,6 +382,14 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
         }
     }
 
+    private void removeKeyBoard(){
+        View view = this.getCurrentFocus();
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
+    }
+
     @Override
     public void onClick(View view) {
         if(view.getId() == paste.getId()){
@@ -411,7 +420,6 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if(keyCode == KeyEvent.KEYCODE_BACK){
             if(isSearching) {
-                cancelFileSearching();
                 openDirectory();
                 return true;
             }else if(openUpperDir()) {
@@ -427,7 +435,6 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
         String msg = "";
         if (id == R.id.home) {
             currentFile = Environment.getExternalStorageDirectory();
-            cancelFileSearching();
             openDirectory();
             msg = "home";
         } else if (id == R.id.search) {
@@ -454,7 +461,6 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
 
     @Override
     public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-        Log.d("searching", "onTextChanged: here");
         if(isSearching){
             searcher.startSearch(charSequence.toString(),currentFile);
         }

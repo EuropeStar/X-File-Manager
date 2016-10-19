@@ -30,7 +30,7 @@ public class MyArrayAdapter extends ArrayAdapter<String> {
     public View getView(int position, View convertView, ViewGroup parent) {
         LayoutInflater inflater= (LayoutInflater) activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         TextView newView = (TextView) inflater.inflate(R.layout.filerow, parent,false);
-        FileWrapper fileWrapper = new FileWrapper(activity,new File(values[position]),newView);
+        new FileWrapper(activity,new File(values[position]),newView);
         String path[] = values[position].split("/");
         newView.setText(path[path.length - 1]);
         return newView;

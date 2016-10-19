@@ -22,24 +22,20 @@ public class MyHandler extends Handler {
 
     @Override
     public void handleMessage(Message msg) {
-        final String TAG = "searching";
+//        final String TAG = "searching";
         if(msg.what == COPY_FINISHED){
             activity.copyFinished();
         }else if(msg.what == COPY_FAILED){
             activity.copyFailed();
         }else if(msg.what == SEARCH_FINISHED){
             searcher.cancelSearch();
-            ArrayList<String> rawFiles = searcher.resOfSearch;
-            Log.d(TAG, "handleMessage: I AM HERE");
+            ArrayList<String> rawFiles = searcher.getResOfSearch();
             if(rawFiles == null) return;
-            Log.d(TAG, "handleMessage: here too");
             String paths[] = new String[rawFiles.size()];
             for (int i = 0; i < paths.length; i++) {
                 paths[i] = rawFiles.get(i);
             }
-            for (String s : paths){
-                Log.d(TAG, s);
-            }
+
             activity.setFiles(paths);
         }
     }
