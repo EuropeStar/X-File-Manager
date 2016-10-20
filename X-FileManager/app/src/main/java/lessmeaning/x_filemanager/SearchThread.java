@@ -1,5 +1,9 @@
 package lessmeaning.x_filemanager;
 
+import android.os.Bundle;
+import android.os.Message;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.util.Log;
 
@@ -15,16 +19,16 @@ public class SearchThread implements Runnable {
     final private MyHandler handler;
     final private FileSearcher parent;
     final String TAG = "searching";
-    ArrayList<String> res;
     final private File dir;
+    private final int ID;
     private volatile boolean searching;
-    public SearchThread(String expression, File dir, MyHandler handler, FileSearcher parent){
+    public SearchThread(String expression, File dir, MyHandler handler, FileSearcher parent, int id){
+        this.ID = id;
         this.parent = parent;
         this.expression = expression;
         this.handler = handler;
         this.dir = dir;
         Log.d(TAG, "SearchThread: ");
-        res = new ArrayList<>();
         searching = true;
     }
     public void cancelSearch(){
@@ -35,7 +39,7 @@ public class SearchThread implements Runnable {
         Log.d(TAG, "search: " + expression);
         if(file == null || !file.exists()) return ;
         if(file.getName().toLowerCase().contains(expression)){
-            res.add(file.getAbsolutePath());
+            sendMessage(file.getAbsolutePath());
         }
         if(file.isDirectory()){
             File children[] = file.listFiles();
@@ -57,9 +61,17 @@ public class SearchThread implements Runnable {
         }
     }
 
-    private void sendMessage() {
-        if(parent.setRes(this,res)) {
-            handler.sendEmptyMessage(MyHandler.SEARCH_FINISHED);
-        }
+    private void sendMessage(final String PATH) {
+        if(!searching) return;
+        Message msg = new Message();
+        msg.what = MyHandler.SEARCH_ITEM;
+        msg.arg1 = ID;
+        msg.obj = PATH;
+        handler.sendMessage(msg);
+    }
+
+    private void sendMessage(){
+        if(!searching) return;
+        handler.sendEmptyMessage(MyHandler.SEARCH_FINISHED);
     }
 }

@@ -32,10 +32,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class MainActivity extends Activity implements View.OnClickListener, NavigationView.OnNavigationItemSelectedListener, TextWatcher {
 
     private ListView filesView;
+    private ProgressBar bar;
     private File currentFile;
     private TextView head;
     private Button paste, addButton;
@@ -47,6 +49,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
     private EditText searchInput;
     private MyHandler handler;
     private FileSearcher searcher;
+    private MyArrayAdapter adapter;
     /*
     TODO: change design of drawer
     TODO: icons
@@ -78,7 +81,6 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
         searchInput = new EditText(this);
         searcher = new FileSearcher(handler);
         openDirectory();
-
     }
 
 
@@ -88,7 +90,12 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
         LayoutInflater inflater = getLayoutInflater();
         searchInput = (EditText) inflater.inflate(R.layout.search_edittext, hat, false);
         searchInput.addTextChangedListener(this);
+        bar = new ProgressBar(this);
+        bar = new ProgressBar(this, null, android.R.attr.progressBarStyleSmall);
         hat.addView(searchInput);
+        hat.addView(bar);
+        bar.setVisibility(View.GONE);
+        setFiles(new ArrayList<String>());
     }
 
     private void setVisibility(final int VIS){
@@ -99,10 +106,12 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
 
     private void cancelFileSearching(){
         Log.d("design", "cancelFileSearching: !!!");
+        if(!isSearching) return;
         isSearching = false;
         searcher.cancelSearch();
         removeKeyBoard();
         searchInput.setVisibility(View.GONE);
+        bar.setVisibility(View.GONE);
         hat.removeView(searchInput);
         setVisibility(View.VISIBLE);
     }
@@ -110,18 +119,21 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
     private void openDirectory() {
         if(isSearching)
             cancelFileSearching();
+        else if(searchInput != null){
+            searchInput.setVisibility(View.GONE);
+        }
         Log.d("ListView",currentFile.toString());
         File children[] = currentFile.listFiles();
-        String values[] = new String[children.length];
-        for (int i = 0; i < values.length; i++){
-            values[i] = children[i].getAbsolutePath();
+        ArrayList<String> values = new ArrayList<>(children.length);
+        for(File child : children){
+            values.add(child.getAbsolutePath());
         }
         head.setText(currentFile.getName());
         setFiles(values);
     }
 
-    public void setFiles(String values[]){
-        new MyArrayAdapter(this,values,filesView);
+    public void setFiles(ArrayList<String> values){
+        adapter = new MyArrayAdapter(this,values,filesView);
     }
 
     public boolean openFile(File file){
@@ -432,6 +444,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         int id = item.getItemId();
+        cancelFileSearching();
         String msg = "";
         if (id == R.id.home) {
             currentFile = Environment.getExternalStorageDirectory();
@@ -441,7 +454,6 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
             msg = "search";
             startFileSearch();
         } else if (id == R.id.encrypted) {
-            cancelFileSearching();
             msg = "encrypted";
         }
 
@@ -455,19 +467,31 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
     }
 
     @Override
-    public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-    }
+    public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
 
     @Override
     public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
         if(isSearching){
+            setFiles(new ArrayList<String>());
+            if(bar != null)
+                bar.setVisibility(View.VISIBLE);
             searcher.startSearch(charSequence.toString(),currentFile);
         }
     }
 
     @Override
-    public void afterTextChanged(Editable editable) {
+    public void afterTextChanged(Editable editable) {}
 
+    public void addItem(String newItem) {
+        if(adapter != null) {
+            adapter.add(newItem);
+            adapter.notifyDataSetChanged();
+        }
+    }
+
+    public void onMySearchFinished() {
+        if(bar != null){
+            bar.setVisibility(View.GONE);
+        }
     }
 }

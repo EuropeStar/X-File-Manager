@@ -14,7 +14,8 @@ import java.util.ArrayList;
 public class MyHandler extends Handler {
     private final MainActivity activity;
     public FileSearcher searcher;
-    public static final int COPY_FINISHED = 123, COPY_FAILED = 8, SEARCH_FINISHED = 333;
+    final String TAG = "newsearch";
+    public static final int COPY_FINISHED = 123, COPY_FAILED = 8, SEARCH_FINISHED = 333, SEARCH_ITEM = 158;
     public MyHandler(MainActivity activity){
         super();
         this.activity = activity;
@@ -28,15 +29,13 @@ public class MyHandler extends Handler {
         }else if(msg.what == COPY_FAILED){
             activity.copyFailed();
         }else if(msg.what == SEARCH_FINISHED){
-            searcher.cancelSearch();
-            ArrayList<String> rawFiles = searcher.getResOfSearch();
-            if(rawFiles == null) return;
-            String paths[] = new String[rawFiles.size()];
-            for (int i = 0; i < paths.length; i++) {
-                paths[i] = rawFiles.get(i);
-            }
+            activity.onMySearchFinished();
+        }else if(msg.what == SEARCH_ITEM){
+            Log.d(TAG, "handleMessage: arg1 = " + msg.arg1);
+            Log.d(TAG, "handleMessage: currentThread == " + searcher.getCurrentThread());
+            if(msg.arg1 != searcher.getCurrentThread()) return;
+            activity.addItem((String)msg.obj);
 
-            activity.setFiles(paths);
         }
     }
 }

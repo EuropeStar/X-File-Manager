@@ -1,5 +1,7 @@
 package lessmeaning.x_filemanager;
 
+import android.util.Log;
+
 import java.io.File;
 import java.util.ArrayList;
 
@@ -9,9 +11,15 @@ import java.util.ArrayList;
 
 public class FileSearcher {
 
+    final String TAG = "searching";
     private final MyHandler handler;
-    private volatile ArrayList<String> resOfSearch;
     private SearchThread searchThread;
+
+    public int getCurrentThread() {
+        return currentThread;
+    }
+
+    private int currentThread = 0;
 
     public FileSearcher(MyHandler handler){
         this.handler = handler;
@@ -28,7 +36,6 @@ public class FileSearcher {
         final String name = n.toLowerCase();
         if(dir == null || !dir.exists() || !dir.isDirectory())
             return;
-        resOfSearch = null;
         reloadSearcher(name, dir);
         new Thread(searchThread).start();
     }
@@ -36,18 +43,8 @@ public class FileSearcher {
     private void reloadSearcher(final String expression, File dir) {
         if(searchThread != null)
             searchThread.cancelSearch();
-        searchThread = new SearchThread(expression, dir, handler, this);
+        searchThread = new SearchThread(expression, dir, handler, this, ++currentThread);
+        Log.d(TAG, "reloadSearcher: currentThread = " + currentThread);
     }
 
-    public synchronized boolean setRes(SearchThread searcher, ArrayList<String> res) {
-        if(this.searchThread == searcher){
-            resOfSearch = res;
-            return true;
-        }
-        return false;
-    }
-
-    public ArrayList<String> getResOfSearch() {
-        return resOfSearch;
-    }
 }
