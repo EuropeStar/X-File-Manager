@@ -19,11 +19,11 @@ import java.util.HashMap;
  * Created by Максим on 11.10.2016.
  */
 public class MyArrayAdapter extends ArrayAdapter<String> {
-    MainActivity activity;
-    ArrayList<String> values;
-    final String TAG = "searchagain";
-    private int numOfVisible = 0;
+
+    private final MainActivity activity;
+    private ArrayList<String> values;
     private final ListView listView;
+
     public MyArrayAdapter(MainActivity context, ArrayList<String> values, ListView listView) {
         super(context, R.layout.filerow, values);
         activity = context;
@@ -34,10 +34,8 @@ public class MyArrayAdapter extends ArrayAdapter<String> {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        numOfVisible++;
-        Log.d(TAG, "getView: " + numOfVisible);
-        Log.d(TAG, "getView: " + values.get(position));
-        LayoutInflater inflater= (LayoutInflater) activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        LayoutInflater inflater= (LayoutInflater) activity.
+                getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         TextView newView = (TextView) inflater.inflate(R.layout.filerow, parent,false);
         new FileWrapper(activity,new File(values.get(position)),newView);
         String path[] = values.get(position).split("/");
@@ -49,18 +47,9 @@ public class MyArrayAdapter extends ArrayAdapter<String> {
         return newView;
     }
 
-
-    @Override
-    public void remove(String object) {
-        super.remove(object);
-        if(true)throw new RuntimeException("in remove");
-        numOfVisible--;
-        Log.d(TAG, "remove: num = " + numOfVisible);
-        Log.d(TAG, "remove: " + object);
-    }
-
     @Override
     public void add(String object) {
+//        to not create too many views and fileWrappers
         if(listView.getLastVisiblePosition() < values.size() - 1){
             values.add(object);
         } else {

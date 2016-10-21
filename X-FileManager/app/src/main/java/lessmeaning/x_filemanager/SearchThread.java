@@ -17,26 +17,22 @@ import java.util.ArrayList;
 public class SearchThread implements Runnable {
     final private String expression;
     final private MyHandler handler;
-    final private FileSearcher parent;
-    final String TAG = "searching";
     final private File dir;
     private final int ID;
     private volatile boolean searching;
-    public SearchThread(String expression, File dir, MyHandler handler, FileSearcher parent, int id){
+    public SearchThread(String expression, File dir, MyHandler handler, int id){
         this.ID = id;
-        this.parent = parent;
         this.expression = expression;
         this.handler = handler;
         this.dir = dir;
-        Log.d(TAG, "SearchThread: ");
         searching = true;
     }
     public void cancelSearch(){
         this.searching = false;
     }
+
     public void search(final String expression, File file){
         if(!searching) return;
-        Log.d(TAG, "search: " + expression);
         if(file == null || !file.exists()) return ;
         if(file.getName().toLowerCase().contains(expression)){
             sendMessage(file.getAbsolutePath());
@@ -50,8 +46,8 @@ public class SearchThread implements Runnable {
                 search(expression, child);
             }
         }
-//        showInLogs(res);
     }
+
     @Override
     public void run() {
         if(!searching) return;

@@ -11,7 +11,6 @@ import java.util.ArrayList;
 
 public class FileSearcher {
 
-    final String TAG = "searching";
     private final MyHandler handler;
     private SearchThread searchThread;
 
@@ -43,8 +42,7 @@ public class FileSearcher {
     private void reloadSearcher(final String expression, File dir) {
         if(searchThread != null)
             searchThread.cancelSearch();
-        searchThread = new SearchThread(expression, dir, handler, this, ++currentThread);
-        Log.d(TAG, "reloadSearcher: currentThread = " + currentThread);
+        searchThread = new SearchThread(expression, dir, handler, ++currentThread);
     }
 
 }

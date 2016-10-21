@@ -34,15 +34,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class MainActivity extends Activity implements View.OnClickListener, NavigationView.OnNavigationItemSelectedListener, TextWatcher {
+public class MainActivity extends Activity implements View.OnClickListener,
+        NavigationView.OnNavigationItemSelectedListener, TextWatcher {
 
     private ListView filesView;
     private ProgressBar bar;
     private File currentFile;
+    private File rootCopy;
     private TextView head;
     private Button paste, addButton;
     private AlertDialog waitingCopy;
-    private volatile boolean stopped;
+    private volatile boolean copyStopped;
     private File copyingFile;
     private boolean isSearching = false;
     private RelativeLayout hat;
@@ -83,7 +85,6 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
         openDirectory();
     }
 
-
     private void startFileSearch(){
         isSearching = true;
         setVisibility(View.GONE);
@@ -114,6 +115,18 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
         bar.setVisibility(View.GONE);
         hat.removeView(searchInput);
         setVisibility(View.VISIBLE);
+    }
+
+    public void addItem(String newItem) {
+        if(adapter != null) {
+            adapter.add(newItem);
+        }
+    }
+
+    public void onMySearchFinished() {
+        if(bar != null){
+            bar.setVisibility(View.GONE);
+        }
     }
 
     private void openDirectory() {
@@ -309,13 +322,15 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
         builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
             @Override
             public void onCancel(DialogInterface dialogInterface) {
-                stopped = true;
+                copyStopped = true;
             }
         });
         waitingCopy = builder.create();
         waitingCopy.show();
-        stopped = false;
+        copyStopped = false;
         copyingFile = null;
+        rootCopy = null;
+
         new Thread() {
             @Override
             public void run() {
@@ -328,18 +343,29 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
         }.start();
     }
 
+    private File createNameOfChild(File dir, File from){
+        File res = new File(dir.getAbsolutePath() + "/" +
+                from.getName());
+
+        while(res.exists()){
+            res = new File(res.getParentFile().getAbsolutePath() + "/" +
+                    "copy_" +
+                    res.getName());
+
+        }
+        return res;
+    }
+
     public boolean copy(File from, File dir) {
-        if(stopped) return false;
+        if(copyStopped) return false;
+        if(rootCopy == null){
+            rootCopy = createNameOfChild(dir, from);
+        }else {
+            if (from.getAbsolutePath().equals(rootCopy.getAbsolutePath())) return true;
+        }
 
         if(from.isDirectory()){
-            dir = new File(dir.getAbsolutePath() + "/" +
-                    from.getName());
-            while(dir.exists()){
-                dir = new File(dir.getParentFile().getAbsolutePath() + "/" +
-                        "copy_" +
-                        dir.getName());
-
-            }
+            dir = createNameOfChild(dir, from);
             if(copyingFile == null){
                 copyingFile = dir;
             }
@@ -489,15 +515,4 @@ public class MainActivity extends Activity implements View.OnClickListener, Navi
     @Override
     public void afterTextChanged(Editable editable) {}
 
-    public void addItem(String newItem) {
-        if(adapter != null) {
-            adapter.add(newItem);
-        }
-    }
-
-    public void onMySearchFinished() {
-        if(bar != null){
-            bar.setVisibility(View.GONE);
-        }
-    }
 }
