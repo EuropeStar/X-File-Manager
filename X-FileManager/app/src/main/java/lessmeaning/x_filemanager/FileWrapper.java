@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.support.v4.view.GestureDetectorCompat;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.View;
 import android.widget.Button;
@@ -18,6 +19,7 @@ public class FileWrapper implements View.OnClickListener, View.OnLongClickListen
     private final File file;
     private final MainActivity activity;
     private final TextView view;
+    public static final String TAG = "searchagain";
 
     public FileWrapper(MainActivity activity, File file, TextView view){
         this.file = file;
@@ -25,10 +27,13 @@ public class FileWrapper implements View.OnClickListener, View.OnLongClickListen
         this.view = view;
         view.setOnClickListener(this);
         view.setOnLongClickListener(this);
+
     }
+//TODO init in add item
 
     @Override
     public void onClick(View view) {
+        Log.d(TAG, "onClick: filewrapper " + file.getName());
         activity.openFile(file);
     }
 
