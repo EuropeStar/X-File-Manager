@@ -150,24 +150,16 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
     public boolean openFile(File file){
-//        TODO : remove toasts
-        final String TAG = "searchagain";
-        Log.d(TAG, "openFile: in there");
         if(!file.isDirectory()){
-            Log.d(TAG, "openFile: not dir");
             openFileInOtherApp(file);
             return true;
         }
         if(!file.exists()){
-            Log.d(TAG, "openFile: doesnot exists");
             return false;
         }
         if(file.listFiles() == null){
-            Toast.makeText(this, "Empty folder", Toast.LENGTH_SHORT).show();
-            Log.d(TAG, "openFile: emty folder");
             return true;
         }
-        Log.d(TAG, "openFile: opening");
         currentFile = file;
         openDirectory();
         return true;
