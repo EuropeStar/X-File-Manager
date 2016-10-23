@@ -22,17 +22,24 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.gms.appindexing.Action;
+import com.google.android.gms.appindexing.AppIndex;
+import com.google.android.gms.common.api.GoogleApiClient;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class MainActivity extends Activity implements View.OnClickListener,
         NavigationView.OnNavigationItemSelectedListener, TextWatcher {
@@ -44,6 +51,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private TextView head;
     private Button paste, addButton;
     private AlertDialog waitingCopy;
+    private AlertDialog cryptDialog;
     private volatile boolean copyStopped;
     private File copyingFile;
     private boolean isSearching = false;
@@ -52,15 +60,19 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private MyHandler handler;
     private FileSearcher searcher;
     private MyArrayAdapter adapter;
-    /*
-    TODO: change design of drawer
-    TODO: icons
+    private ImageButton showDrawer;
+    /**
+     * ATTENTION: This was auto-generated to implement the App Indexing API.
+     * See https://g.co/AppIndexing/AndroidStudio for more information.
      */
+    private GoogleApiClient client;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        float width = this.getWindowManager().getDefaultDisplay().getWidth();
+        Helper.scaleX = width / Helper.WIDTH;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             requestPermissions(new String[]{
                     "android.permission.READ_EXTERNAL_STORAGE",
@@ -68,6 +80,8 @@ public class MainActivity extends Activity implements View.OnClickListener,
             }, 102);
         }
         setContentView(R.layout.activity_main);
+        showDrawer = (ImageButton) findViewById(R.id.show_drawer);
+        showDrawer.setOnClickListener(this);
         NavigationView view = (NavigationView) findViewById(R.id.nav_view);
         view.setNavigationItemSelectedListener(this);
         hat = (RelativeLayout) findViewById(R.id.hat);
@@ -83,9 +97,60 @@ public class MainActivity extends Activity implements View.OnClickListener,
         searchInput = new EditText(this);
         searcher = new FileSearcher(handler);
         openDirectory();
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
 
-    private void startFileSearch(){
+    private void openCryptDialog(final File file) {
+        if (file == null || file.isDirectory() || !file.exists()) return;
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        final EditText pass = new EditText(this);
+        builder.setView(pass);
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.cancel();
+            }
+        });
+        final boolean encrypt = !file.getName().contains(Crypto.EXTENSION);
+        final String whatCrypt = encrypt ? "Encrypt" : "Decrypt";
+        builder.setPositiveButton(whatCrypt, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                startEncrypt(file, pass.getText().toString(), encrypt);
+            }
+        });
+        builder.create().show();
+    }
+
+    private void startEncrypt(File file, String pass, boolean encryt) {
+        FileEncryptor fileEncryptor = new FileEncryptor(handler);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        ProgressBar bar = new ProgressBar(this);
+        builder.setView(bar);
+        cryptDialog = builder.create();
+        cryptDialog.show();
+        if (encryt)
+            fileEncryptor.startEncrypt(file, pass);
+        else
+            fileEncryptor.startDecrypt(file, pass);
+    }
+
+    public void encrytFinished(boolean success) {
+        cryptDialog.cancel();
+        String message = "crypt unsuccess";
+        if (success) {
+            message = "crypt success";
+            openDirectory();
+        }
+        Toast.makeText(this,
+                message,
+                Toast.LENGTH_LONG).show();
+
+    }
+
+    private void startFileSearch() {
         isSearching = true;
         setVisibility(View.GONE);
         LayoutInflater inflater = getLayoutInflater();
@@ -99,15 +164,16 @@ public class MainActivity extends Activity implements View.OnClickListener,
         setFiles(new ArrayList<String>());
     }
 
-    private void setVisibility(final int VIS){
+    private void setVisibility(final int VIS) {
         paste.setVisibility(VIS);
         addButton.setVisibility(VIS);
         head.setVisibility(VIS);
+        showDrawer.setVisibility(VIS);
     }
 
-    private void cancelFileSearching(){
+    private void cancelFileSearching() {
         Log.d("design", "cancelFileSearching: !!!");
-        if(!isSearching) return;
+        if (!isSearching) return;
         isSearching = false;
         searcher.cancelSearch();
         removeKeyBoard();
@@ -118,46 +184,47 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
     public void addItem(String newItem) {
-        if(adapter != null) {
+        if (adapter != null) {
             adapter.add(newItem);
         }
     }
 
     public void onMySearchFinished() {
-        if(bar != null){
+        if (bar != null) {
             bar.setVisibility(View.GONE);
         }
     }
 
     private void openDirectory() {
-        if(isSearching)
+        if (isSearching)
             cancelFileSearching();
-        else if(searchInput != null){
+        else if (searchInput != null) {
             searchInput.setVisibility(View.GONE);
         }
-        Log.d("ListView",currentFile.toString());
+        Log.d("ListView", currentFile.toString());
         File children[] = currentFile.listFiles();
+//        Arrays.sort(children);
         ArrayList<String> values = new ArrayList<>(children.length);
-        for(File child : children){
+        for (File child : children) {
             values.add(child.getAbsolutePath());
         }
         head.setText(currentFile.getName());
         setFiles(values);
     }
 
-    public void setFiles(ArrayList<String> values){
-        adapter = new MyArrayAdapter(this,values,filesView);
+    public void setFiles(ArrayList<String> values) {
+        adapter = new MyArrayAdapter(this, values, filesView);
     }
 
-    public boolean openFile(File file){
-        if(!file.isDirectory()){
+    public boolean openFile(File file) {
+        if (!file.isDirectory()) {
             openFileInOtherApp(file);
             return true;
         }
-        if(!file.exists()){
+        if (!file.exists()) {
             return false;
         }
-        if(file.listFiles() == null){
+        if (file.listFiles() == null) {
             return true;
         }
         currentFile = file;
@@ -166,16 +233,20 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
     private void openFileInOtherApp(File file) {
+        if (file.getName().contains(Crypto.EXTENSION)) {
+            openCryptDialog(file);
+            return;
+        }
         Uri uri = Uri.fromFile(file);
         Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setDataAndType(uri,Helper.typeOfFile(file));
+        intent.setDataAndType(uri, Helper.typeOfFile(file));
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
     }
 
-    private boolean openUpperDir(){
+    private boolean openUpperDir() {
         File parent = currentFile.getParentFile();
-        if(parent == null) return false;
+        if (parent == null) return false;
         return openFile(parent);
     }
 
@@ -201,7 +272,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
 
     private void create(String fileName, boolean isDir) {
         File file = new File(currentFile.getAbsolutePath() + "/" + fileName);
-        if(isDir){
+        if (isDir) {
             file.mkdir();
             return;
         }
@@ -237,20 +308,20 @@ public class MainActivity extends Activity implements View.OnClickListener,
                                         getAbsolutePath();
                                 return true;
                             case R.id.encrypt:
-                                if(isDir){
+                                if (isDir) {
                                     Toast.makeText(getApplicationContext(),
                                             "You cannot encrypt directory",
                                             Toast.LENGTH_LONG).show();
-                                }else{
-                                    //TODO : encrypt
+                                } else {
+                                    openCryptDialog(fileWrapper.getFile());
                                 }
                                 return true;
                             case R.id.share:
-                                if(isDir){
+                                if (isDir) {
                                     Toast.makeText(getApplicationContext(),
                                             "You cannot share directory",
                                             Toast.LENGTH_LONG).show();
-                                }else{
+                                } else {
                                     fileWrapper.shareFile();
                                 }
                                 return true;
@@ -281,12 +352,12 @@ public class MainActivity extends Activity implements View.OnClickListener,
         builder.setMessage("Rename")
                 .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
-                        if(fileWrapper.renameFile(text.getText().toString())){
+                        if (fileWrapper.renameFile(text.getText().toString())) {
                             Toast.makeText(getApplicationContext(),
                                     "Renamed",
                                     Toast.LENGTH_SHORT).show();
                             openDirectory();
-                        }else{
+                        } else {
                             Toast.makeText(getApplicationContext(),
                                     "Can't do this",
                                     Toast.LENGTH_SHORT).show();
@@ -335,11 +406,11 @@ public class MainActivity extends Activity implements View.OnClickListener,
         }.start();
     }
 
-    private File createNameOfChild(File dir, File from){
+    private File createNameOfChild(File dir, File from) {
         File res = new File(dir.getAbsolutePath() + "/" +
                 from.getName());
 
-        while(res.exists()){
+        while (res.exists()) {
             res = new File(res.getParentFile().getAbsolutePath() + "/" +
                     "copy_" +
                     res.getName());
@@ -349,57 +420,28 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
     public boolean copy(File from, File dir) {
-        if(copyStopped) return false;
-        if(rootCopy == null){
+        if (copyStopped) return false;
+        if (rootCopy == null) {
             rootCopy = createNameOfChild(dir, from);
-        }else {
+        } else {
             if (from.getAbsolutePath().equals(rootCopy.getAbsolutePath())) return true;
         }
 
-        if(from.isDirectory()){
+        if (from.isDirectory()) {
             dir = createNameOfChild(dir, from);
-            if(copyingFile == null){
+            if (copyingFile == null) {
                 copyingFile = dir;
             }
             dir.mkdirs();
             boolean succes = true;
-            for(File file : from.listFiles()){
-                if(!copy(file, dir))
+            for (File file : from.listFiles()) {
+                if (!copy(file, dir))
                     succes = false;
             }
             return succes;
-        }else {
-            return copyOneFile(from, dir);
+        } else {
+            return Helper.copyOneFile(from, dir);
         }
-    }
-
-    private boolean copyOneFile(File from, File dir) {
-        File to = new File(dir.getAbsolutePath() +
-                "/" +
-                from.getName());
-        while(to.exists()){
-            to = new File(to.getParentFile().getAbsolutePath() + "/" +
-                    "copy_" +
-                    to.getName());
-        }
-        if(copyingFile == null){
-            copyingFile = to;
-        }
-        try {
-            FileInputStream  input = new FileInputStream(from);
-            FileOutputStream output = new FileOutputStream(to);
-            byte bytes[] = new byte[1024];
-            int num;
-            while((num = input.read(bytes)) != -1){
-                output.write(bytes, 0, num);
-            }
-            input.close();
-            output.close();
-            return true;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return false;
     }
 
     public void copyFinished() {
@@ -414,27 +456,27 @@ public class MainActivity extends Activity implements View.OnClickListener,
         Toast.makeText(this,
                 "copy failed",
                 Toast.LENGTH_SHORT).show();
-        if(copyingFile != null || copyingFile.exists()){
+        if (copyingFile != null || copyingFile.exists()) {
             Helper.deleteFile(copyingFile);
         }
     }
 
-    private void removeKeyBoard(){
+    private void removeKeyBoard() {
         View view = this.getCurrentFocus();
         if (view != null) {
-            InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
         }
     }
 
     @Override
     public void onClick(View view) {
-        if(view.getId() == paste.getId()){
-            if(Helper.bufferPath == null) return;
+        if (view.getId() == paste.getId()) {
+            if (Helper.bufferPath == null) return;
             File from = new File(Helper.bufferPath);
-            if(!from.exists()) return;
+            if (!from.exists()) return;
             startCopy(from);
-        }else if (view.getId() == addButton.getId()){
+        } else if (view.getId() == addButton.getId()) {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
             builder.setPositiveButton("File", new DialogInterface.OnClickListener() {
@@ -450,16 +492,19 @@ public class MainActivity extends Activity implements View.OnClickListener,
                 }
             });
             builder.create().show();
+        } else if (view.getId() == showDrawer.getId()){
+            DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+            drawer.openDrawer(GravityCompat.START);
         }
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if(keyCode == KeyEvent.KEYCODE_BACK){
-            if(isSearching) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            if (isSearching) {
                 openDirectory();
                 return true;
-            }else if(openUpperDir()) {
+            } else if (openUpperDir()) {
                 return true;
             }
         }
@@ -482,9 +527,6 @@ public class MainActivity extends Activity implements View.OnClickListener,
             msg = "encrypted";
         }
 
-        Toast.makeText(this,
-                msg,
-                Toast.LENGTH_SHORT).show();
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
@@ -492,19 +534,59 @@ public class MainActivity extends Activity implements View.OnClickListener,
     }
 
     @Override
-    public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
+    public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+    }
 
     @Override
     public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-        if(isSearching){
+        if (isSearching) {
             setFiles(new ArrayList<String>());
-            if(bar != null)
+            if (bar != null)
                 bar.setVisibility(View.VISIBLE);
-            searcher.startSearch(charSequence.toString(),currentFile);
+            searcher.startSearch(charSequence.toString(), currentFile);
         }
     }
 
     @Override
     public void afterTextChanged(Editable editable) {}
 
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client.connect();
+        Action viewAction = Action.newAction(
+                Action.TYPE_VIEW, // TODO: choose an action type.
+                "Main Page", // TODO: Define a title for the content shown.
+                // TODO: If you have web page content that matches this app activity's content,
+                // make sure this auto-generated web page URL is correct.
+                // Otherwise, set the URL to null.
+                Uri.parse("http://host/path"),
+                // TODO: Make sure this auto-generated app URL is correct.
+                Uri.parse("android-app://lessmeaning.x_filemanager/http/host/path")
+        );
+        AppIndex.AppIndexApi.start(client, viewAction);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        Action viewAction = Action.newAction(
+                Action.TYPE_VIEW, // TODO: choose an action type.
+                "Main Page", // TODO: Define a title for the content shown.
+                // TODO: If you have web page content that matches this app activity's content,
+                // make sure this auto-generated web page URL is correct.
+                // Otherwise, set the URL to null.
+                Uri.parse("http://host/path"),
+                // TODO: Make sure this auto-generated app URL is correct.
+                Uri.parse("android-app://lessmeaning.x_filemanager/http/host/path")
+        );
+        AppIndex.AppIndexApi.end(client, viewAction);
+        client.disconnect();
+    }
 }

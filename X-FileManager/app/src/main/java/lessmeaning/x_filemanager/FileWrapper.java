@@ -20,12 +20,13 @@ public class FileWrapper implements View.OnClickListener, View.OnLongClickListen
     private final File file;
     private final MainActivity activity;
     private final TextView view;
-    public static final int ICON_SIZE = 100;
+    public final int ICON_SIZE;
 
     public FileWrapper(MainActivity activity, File file, TextView view){
         this.file = file;
         this.activity = activity;
         this.view = view;
+        ICON_SIZE = (int)(110.0 * Helper.scaleX);
         detType();
         view.setOnClickListener(this);
         view.setOnLongClickListener(this);
@@ -83,7 +84,6 @@ public class FileWrapper implements View.OnClickListener, View.OnLongClickListen
         } else if (name.contains(".zip")) {
             type = R.mipmap.zip_icon;
         }
-
         Drawable pic;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             pic = activity.getDrawable(type);
@@ -92,6 +92,7 @@ public class FileWrapper implements View.OnClickListener, View.OnLongClickListen
         }
         pic.setBounds(0, 0, ICON_SIZE, ICON_SIZE);
         view.setCompoundDrawables(pic, null, null, null);
+
     }
 
     @Override
