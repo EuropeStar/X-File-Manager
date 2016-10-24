@@ -1,6 +1,7 @@
 package lessmeaning.x_filemanager;
 
 import android.os.Message;
+import android.util.Log;
 
 import java.io.File;
 
@@ -9,8 +10,7 @@ import java.io.File;
  */
 public class FileEncryptor{
 
-    public static final String TAG = "crypt";
-
+//    public static final String TAG = "encrypt";
     private final MyHandler hanler;
 
     public FileEncryptor(MyHandler handler){
@@ -33,6 +33,7 @@ public class FileEncryptor{
                     File newFile = new File(file.getParentFile().getAbsolutePath() + 
                             "/" + file.getName() + Crypto.EXTENSION);
                     file.renameTo(newFile);
+                    Crypto.addToEnc(newFile);
                 }
                 sendMessage(success);
             }
@@ -51,6 +52,7 @@ public class FileEncryptor{
         if(fileMain == null || fileMain.isDirectory() || !fileMain.exists()) return false;
         final File file = new File(fileMain.getParentFile().getAbsolutePath() + "/" +
                 fileMain.getName().split(Crypto.EXTENSION)[0]);
+
         Helper.copyFromTo(fileMain, file);
         new Thread(new Runnable() {
             @Override
@@ -63,6 +65,7 @@ public class FileEncryptor{
                     e.printStackTrace();
                 }
                 if(success) {
+                    Crypto.removeFromEnc(fileMain);
                     fileMain.delete();
                 } else {
                     file.delete();

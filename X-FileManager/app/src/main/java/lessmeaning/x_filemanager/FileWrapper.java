@@ -32,69 +32,6 @@ public class FileWrapper implements View.OnClickListener, View.OnLongClickListen
         view.setOnLongClickListener(this);
     }
 
-    private void detType() {
-        String name = file.getName();
-        int type = R.mipmap.folder_icon;
-        if (!file.isDirectory()) {
-            type = R.mipmap.unknown_type;
-        }
-
-        if (name.contains(".jp") || name.contains(".png")){
-            type = R.mipmap.jpg_icon;
-        } else if (name.contains(".avi")) {
-            type = R.mipmap.avi_icon;
-        } else if (name.contains(".bmp")) {
-            type = R.mipmap.bmp_icon;
-        } else if (name.contains(".css")) {
-            type = R.mipmap.css_icon;
-        } else if (name.contains(".doc")) {
-            type = R.mipmap.doc_icon;
-        } else if (name.contains(".gif")) {
-            type = R.mipmap.gif_icon;
-        } else if (name.contains(".htm")) {
-            type = R.mipmap.htm_icon;
-        } else if (name.contains(".ini")) {
-            type = R.mipmap.ini_icon;
-        } else if (name.contains(".mov")) {
-            type = R.mipmap.mov_icon;
-        } else if (name.contains("mpeg")) {
-            type = R.mipmap.mpeg_icon;
-        } else if (name.contains(".mp")) {
-            type = R.mipmap.mp3_icon;
-        } else if (name.contains(".pdf") ||
-                name.contains(".djvu")) {
-            type = R.mipmap.pdf_icon;
-        } else if (name.contains(".ppt")) {
-            type = R.mipmap.ppt_icon;
-        } else if (name.contains(".rar")) {
-            type = R.mipmap.rar_icon;
-        } else if (name.contains(".txt") ||
-                name.contains(".text") ||
-                name.contains(".rtf") ||
-                name.contains(".fb2")) {
-            type = R.mipmap.txt_icon;
-        } else if (name.contains(".tiff")) {
-            type = R.mipmap.tiff_icon;
-        } else if (name.contains(".url")) {
-            type = R.mipmap.url_icon;
-        } else if (name.contains(".wav")) {
-            type = R.mipmap.wav_icon;
-        } else if (name.contains(".wm")) {
-            type = R.mipmap.wav_icon;
-        } else if (name.contains(".zip")) {
-            type = R.mipmap.zip_icon;
-        }
-        Drawable pic;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            pic = activity.getDrawable(type);
-        }else{
-            pic = activity.getResources().getDrawable(type);
-        }
-        pic.setBounds(0, 0, ICON_SIZE, ICON_SIZE);
-        view.setCompoundDrawables(pic, null, null, null);
-
-    }
-
     @Override
     public void onClick(View view) {
         activity.openFile(file);
@@ -165,4 +102,68 @@ public class FileWrapper implements View.OnClickListener, View.OnLongClickListen
         activity.showPopMenu(this);
         return true;
     }
+
+    private void detType() {
+        String name = file.getName();
+        int type = R.mipmap.unknown_type;;
+        if (file.isDirectory()) {
+            type = R.mipmap.folder_icon;
+        }else if (name.contains(Crypto.EXTENSION)) {
+            type = R.mipmap.encrypted_icon;
+        }else if (name.contains(".jp") || name.contains(".png")){
+            type = R.mipmap.jpg_icon;
+        } else if (name.contains(".avi")) {
+            type = R.mipmap.avi_icon;
+        } else if (name.contains(".bmp")) {
+            type = R.mipmap.bmp_icon;
+        } else if (name.contains(".css")) {
+            type = R.mipmap.css_icon;
+        } else if (name.contains(".doc")) {
+            type = R.mipmap.doc_icon;
+        } else if (name.contains(".gif")) {
+            type = R.mipmap.gif_icon;
+        } else if (name.contains(".htm")) {
+            type = R.mipmap.htm_icon;
+        } else if (name.contains(".ini")) {
+            type = R.mipmap.ini_icon;
+        } else if (name.contains(".mov")) {
+            type = R.mipmap.mov_icon;
+        } else if (name.contains("mpeg")) {
+            type = R.mipmap.mpeg_icon;
+        } else if (name.contains(".mp")) {
+            type = R.mipmap.mp3_icon;
+        } else if (name.contains(".pdf") ||
+                name.contains(".djvu")) {
+            type = R.mipmap.pdf_icon;
+        } else if (name.contains(".ppt")) {
+            type = R.mipmap.ppt_icon;
+        } else if (name.contains(".rar")) {
+            type = R.mipmap.rar_icon;
+        } else if (name.contains(".txt") ||
+                name.contains(".text") ||
+                name.contains(".rtf") ||
+                name.contains(".fb2")) {
+            type = R.mipmap.txt_icon;
+        } else if (name.contains(".tiff")) {
+            type = R.mipmap.tiff_icon;
+        } else if (name.contains(".url")) {
+            type = R.mipmap.url_icon;
+        } else if (name.contains(".wav")) {
+            type = R.mipmap.wav_icon;
+        } else if (name.contains(".wm")) {
+            type = R.mipmap.wav_icon;
+        } else if (name.contains(".zip")) {
+            type = R.mipmap.zip_icon;
+        }
+        Drawable pic;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            pic = activity.getDrawable(type);
+        }else{
+            pic = activity.getResources().getDrawable(type);
+        }
+        pic.setBounds(0, 0, ICON_SIZE, ICON_SIZE);
+        view.setCompoundDrawables(pic, null, null, null);
+
+    }
+
 }

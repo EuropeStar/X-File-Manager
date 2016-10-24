@@ -35,11 +35,8 @@ import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.api.GoogleApiClient;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class MainActivity extends Activity implements View.OnClickListener,
         NavigationView.OnNavigationItemSelectedListener, TextWatcher {
@@ -54,6 +51,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     private AlertDialog cryptDialog;
     private volatile boolean copyStopped;
     private File copyingFile;
+    private boolean inEncrypted = false;
     private boolean isSearching = false;
     private RelativeLayout hat;
     private EditText searchInput;
@@ -80,6 +78,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
             }, 102);
         }
         setContentView(R.layout.activity_main);
+        Crypto.onStart();
         showDrawer = (ImageButton) findViewById(R.id.show_drawer);
         showDrawer.setOnClickListener(this);
         NavigationView view = (NavigationView) findViewById(R.id.nav_view);
@@ -96,7 +95,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
         handler = new MyHandler(this);
         searchInput = new EditText(this);
         searcher = new FileSearcher(handler);
-        openDirectory();
+        openCurrentDirectory();
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
@@ -137,17 +136,16 @@ public class MainActivity extends Activity implements View.OnClickListener,
             fileEncryptor.startDecrypt(file, pass);
     }
 
-    public void encrytFinished(boolean success) {
+    public void encryptFinished(boolean success) {
         cryptDialog.cancel();
-        String message = "crypt unsuccess";
+        String message = "crypt unsuccessful";
         if (success) {
-            message = "crypt success";
-            openDirectory();
+            message = "crypt successful";
+            openCurrentDirectory();
         }
         Toast.makeText(this,
                 message,
                 Toast.LENGTH_LONG).show();
-
     }
 
     private void startFileSearch() {
@@ -195,7 +193,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
         }
     }
 
-    private void openDirectory() {
+    private void openCurrentDirectory() {
         if (isSearching)
             cancelFileSearching();
         else if (searchInput != null) {
@@ -228,7 +226,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
             return true;
         }
         currentFile = file;
-        openDirectory();
+        openCurrentDirectory();
         return true;
     }
 
@@ -258,7 +256,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
                 create(text.getText().toString(), isDir);
-                openDirectory();
+                openCurrentDirectory();
             }
         });
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -297,7 +295,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
 
                             case R.id.delete:
                                 fileWrapper.delete();
-                                openDirectory();
+                                openCurrentDirectory();
                                 return true;
                             case R.id.open:
                                 openFile(fileWrapper.getFile());
@@ -356,7 +354,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                             Toast.makeText(getApplicationContext(),
                                     "Renamed",
                                     Toast.LENGTH_SHORT).show();
-                            openDirectory();
+                            openCurrentDirectory();
                         } else {
                             Toast.makeText(getApplicationContext(),
                                     "Can't do this",
@@ -449,7 +447,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
                 "copy successful",
                 Toast.LENGTH_SHORT).show();
         waitingCopy.cancel();
-        openDirectory();
+        openCurrentDirectory();
     }
 
     public void copyFailed() {
@@ -502,7 +500,10 @@ public class MainActivity extends Activity implements View.OnClickListener,
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             if (isSearching) {
-                openDirectory();
+                openCurrentDirectory();
+                return true;
+            } else if (inEncrypted) {
+                closeEncrypted();
                 return true;
             } else if (openUpperDir()) {
                 return true;
@@ -515,22 +516,36 @@ public class MainActivity extends Activity implements View.OnClickListener,
     public boolean onNavigationItemSelected(MenuItem item) {
         int id = item.getItemId();
         cancelFileSearching();
+        if(inEncrypted)
+            closeEncrypted();
         String msg = "";
         if (id == R.id.home) {
             currentFile = Environment.getExternalStorageDirectory();
-            openDirectory();
+            openCurrentDirectory();
             msg = "home";
         } else if (id == R.id.search) {
             msg = "search";
             startFileSearch();
         } else if (id == R.id.encrypted) {
             msg = "encrypted";
+            openEncrypted();
         }
 
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    private void openEncrypted() {
+        inEncrypted = true;
+        setFiles(Crypto.getEncrypted());
+        head.setText("ENCRYPTED");
+    }
+
+    private void closeEncrypted() {
+        inEncrypted = false;
+        openCurrentDirectory();
     }
 
     @Override
@@ -574,6 +589,7 @@ public class MainActivity extends Activity implements View.OnClickListener,
     public void onStop() {
         super.onStop();
 
+        Crypto.onFinish();
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         Action viewAction = Action.newAction(

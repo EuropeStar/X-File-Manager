@@ -2,11 +2,6 @@ package lessmeaning.x_filemanager;
 
 import android.os.Handler;
 import android.os.Message;
-import android.os.Parcelable;
-import android.util.Log;
-
-import java.io.File;
-import java.util.ArrayList;
 
 /**
  * Created by Максим on 15.10.2016.
@@ -36,7 +31,7 @@ public class MyHandler extends Handler {
             if (msg.arg1 != searcher.getCurrentThread()) return;
             activity.addItem((String) msg.obj);
         } else if (msg.what == CRYPT_FINISHED){
-            activity.encrytFinished((boolean)msg.obj);
+            activity.encryptFinished((boolean)msg.obj);
         }
     }
 }
